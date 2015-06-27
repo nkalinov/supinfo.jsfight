@@ -1,0 +1,180 @@
+#!/usr/bin/env node
+
+var app = require('../app'),
+    debug = require('debug')('supinfo.jsfight:server'),
+    port = normalizePort(process.env.PORT || '3000'),
+    users = [];
+
+// http server
+app.set('port', port);
+var server = require('http').createServer(app);
+var io = require('socket.io').listen(server.listen(port));
+
+// assign req/res to socket object
+io.use(function (socket, next) {
+    app.sessionMiddleware(socket.request, socket.request.res, next);
+});
+
+// sockets events
+io.sockets.on('connection', function (socket) {
+
+    var session = socket.request.session;
+
+    if (session.logged) {
+
+        // delete old user session
+        for (var i = 0; i < users.length; i++) {
+            if (users[i].username == session.username)
+                users.splice(i, 1);
+        }
+
+        // add new online user
+        users.push({
+            username: session.username,
+            id: socket.id
+        });
+
+        // send online users to everyone
+        io.sockets.emit('users', {users: users});
+
+        // emit Welcome message
+        socket.emit('message', {
+            username: 'Server',
+            message: 'Welcome ' + session.username + "!"
+        });
+
+        // receive chat messages
+        socket.on('send', function (data) {
+            io.sockets.emit('message', {message: data.message, username: session.username});
+        });
+
+        // send game invite
+        socket.on('send-invite', function (data) {
+
+            var to_id = data.id;
+            var me = socket.id;
+            socket.to(to_id).emit('receive-invite', {username: session.username, id: me});
+        });
+
+        // decline game invite
+        socket.on('decline-invite', function (data) {
+
+            var to_id = data.id;
+            socket.to(to_id).emit('decline-invite', {username: session.username});
+        });
+
+        // accept invite
+        socket.on('accept-invite', function (data) {
+
+            var to_id = data.id;
+            var me = socket.id;
+            var username = data.username;
+
+            // send my id, username to player who invited me
+            socket.to(to_id).emit('play', {id: me, username: session.username});
+
+            // send other player's id, username to myself
+            socket.emit('play', {id: to_id, username: username});
+        });
+
+        // receive / send move
+        socket.on('move', function(data) {
+
+            var to_id = data.id;
+            var x = data.x;
+            var y = data.y;
+
+            socket.to(to_id).emit('move', {x: x, y: y});
+        });
+
+        // receive / send action
+        socket.on('action', function(data) {
+
+            var to_id = data.id;
+            var action = data.action;
+            var points = data.points;
+
+            socket.to(to_id).emit('action', {action: action, points: points});
+        });
+    }
+
+    // remove online player
+    socket.on('disconnect', function () {
+        for (var i = 0; i < users.length; i++) {
+            if (users[i].id == socket.id)
+                users.splice(i, 1);
+        }
+        // resend users
+        io.sockets.emit('users', {users: users});
+    });
+});
+
+server.on('error', onError);
+server.on('listening', onListening);
+
+// Find player by ID
+function playerById(id) {
+    for (var i = 0; i < users.length; i++) {
+        if (users[i].id == id)
+            return users[i];
+    }
+
+    return false;
+}
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+function normalizePort(val) {
+    var port = parseInt(val, 10);
+
+    if (isNaN(port)) {
+        // named pipe
+        return val;
+    }
+
+    if (port >= 0) {
+        // port number
+        return port;
+    }
+
+    return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+function onError(error) {
+    if (error.syscall !== 'listen') {
+        throw error;
+    }
+
+    var bind = typeof port === 'string'
+        ? 'Pipe ' + port
+        : 'Port ' + port;
+
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+        case 'EACCES':
+            console.error(bind + ' requires elevated privileges');
+            process.exit(1);
+            break;
+        case 'EADDRINUSE':
+            console.error(bind + ' is already in use');
+            process.exit(1);
+            break;
+        default:
+            throw error;
+    }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+function onListening() {
+    var addr = server.address();
+    var bind = typeof addr === 'string'
+        ? 'pipe ' + addr
+        : 'port ' + addr.port;
+    debug('Listening on ' + bind);
+}

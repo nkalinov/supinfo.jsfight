@@ -1,0 +1,45 @@
+extends layout
+
+block scripts
+    script(src = '/socket.io/socket.io.js')
+    script(src = '/javascripts/drawing.js')
+    script(src = '/javascripts/helpers.js')
+    script(src = '/javascripts/player.js')
+    script(src = '/javascripts/game.js')
+    script.
+        invite_accept=#{invite_accept};
+        invite_user="#{invite_user}";
+        invite_username="#{invite_username}";
+        username="#{username}";
+
+block content
+    div.sixteen.wide.column.center.aligned
+        div#bar1.bar
+            div.health
+            span#username1
+        div.time
+            label#minutes=00
+            | :
+            label#seconds=00
+        div#bar2.bar
+            div.health
+            span#username2
+        canvas#canvas(width=880, height=400)
+        div#controls
+            |Controls:
+            ul
+                li
+                    span arrows
+                    | -move
+                li
+                    span 1
+                    | -block
+                li
+                    span q
+                    | -punch
+                li
+                    span w
+                    | -kick
+                li
+                    span e
+                    | -power attack

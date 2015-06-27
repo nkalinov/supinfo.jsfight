@@ -1,0 +1,27 @@
+doctype html
+html
+  head
+    title= title
+    link(rel='stylesheet', href='/stylesheets/style.css')
+    block scripts
+  body.ui.page.grid
+
+    div.row
+      header.eight.wide.column
+        a(href='/'): h1 SupFighter
+      if logged
+        div.eight.wide.column.right.aligned
+          nav.ui.secondary.menu
+            a(href="/lobby").item Lobby
+            a(href="/logout").item Logout(#{username})
+    if success
+      div.ui.success.message.ten.wide.column
+        each val in success
+          p= val
+    else if error
+      div.ui.error.message.ten.wide.column
+        each val in error
+          p= val
+
+    main.row
+      block content

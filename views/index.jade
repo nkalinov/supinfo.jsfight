@@ -1,0 +1,28 @@
+extends layout
+
+block content
+
+  segment.ui.eight.wide.column
+    h2 Login
+    form(method='post', action='/login').ui.form
+      div.field
+        label(for='user') Username
+        input(name='user', id='user')
+      div.field
+        label(for='pass') Password
+        input(name='pass', id='pass', type="password")
+      button(type='submit').ui.big.button Sign-in
+
+  segment.ui.eight.wide.column
+    h2 Register
+    form(method='post', action='/registration').ui.form
+      div.field
+        label(for='username') Username
+        input(name='username', id='username')
+      div.field
+        label(for='password') Password
+        input(type='password', name='password', id='password')
+      div.field
+        label(for='password2') Confirm password
+        input(type='password', name='password2', id='password2')
+      button(type='submit').ui.big.button Sign-up

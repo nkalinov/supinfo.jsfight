@@ -1,0 +1,26 @@
+extends layout
+
+block scripts
+   script(src='/javascripts/helpers.js')
+   script(src='/javascripts/chat.js')
+   script(src='/socket.io/socket.io.js')
+
+block content
+   div.sixteen.wide.column(style="margin-bottom: 20px;"): h2 Lobby
+
+   div.four.wide.column.center.aligned
+      a.ui.big.red.button(href='#') Quick fight
+
+   div.six.wide.column
+      h3.ui.dividing.header Chat
+      div.chatWrapper
+         ul#chat
+      div.ui.action.fluid.input
+         input(id="username", type="hidden" value=username)
+         input(id="message", placeholder="Your message...", onkeydown="if (event.keyCode == 13) document.getElementById('send').click()")
+         button(id="send").ui.button Send
+
+   div.six.wide.column
+      h3.ui.dividing.header Online users
+      div.chatWrapper
+         ul#users
